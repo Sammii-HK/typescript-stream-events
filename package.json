@@ -1,0 +1,24 @@
+{
+  "name": "typescript-stream-events",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "lite-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sammii-HK/typescript-stream-events.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sammii-HK/typescript-stream-events/issues"
+  },
+  "homepage": "https://github.com/Sammii-HK/typescript-stream-events#readme",
+  "devDependencies": {
+    "lite-server": "^2.6.1",
+    "typescript": "^4.5.4"
+  }
+}
