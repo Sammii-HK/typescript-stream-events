@@ -30,11 +30,14 @@ const formatFields = () => {
 const formattedFields = formatFields();
 
 const placeSearchUrl = (searchInput: string) => `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
-  // `?fields=${formattedFields}` +
   `?fields=name%2Cplace_id` +
   `&input=${searchInput}` +
   `&inputtype=textquery` +
   `&key=${apiKey}`;
+
+const detailsSearchUrl = (placeId) => `https://maps.googleapis.com/maps/api/place/details/json` +
+`?fields=${formattedFields}` +
+`&place_id=${placeId}&key=${apiKey}`;
 
 async function getPlaces(searchId: number, searchType: 'name' | 'postcode') {
   try {
@@ -49,4 +52,20 @@ async function getPlaces(searchId: number, searchType: 'name' | 'postcode') {
 };
 getPlaces(2, 'name');
 // getPlaces(3, 'postcode');
+
+async function getDetails(searchId: number) {
+  try {
+    const url = detailsSearchUrl(searches[searchId].placeIds);
+    const res = await axios.get(url);
+    console.log("DETAILS RESULTS: ", res.data)
+    return res
+  } catch (error) {
+    console.error(error.response);
+  }
+};
+getDetails(2); // * good search
+// getDetails(5);  // * good search
+// getDetails(6); // * good search
+// getDetails(7); // * good search
+// getDetails(8); // * good search
 
