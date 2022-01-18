@@ -1,10 +1,10 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 console.log("hello world!");
-var Stream_1 = require("./common/modules/Stream");
-var testStream = new Stream_1.TestStream();
-testStream.subscribe(function (event) {
-    var payload = event.payload;
+const Stream_1 = require("./common/modules/Stream");
+const testStream = new Stream_1.TestStream();
+testStream.subscribe((event) => {
+    const payload = event.payload;
     // console.log(payload.)
     // if (event === NewCqcRecordEvent) {
     // } else {}

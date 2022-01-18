@@ -1,24 +1,20 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.TestStream = void 0;
 ;
 ;
-var TestStream = /** @class */ (function () {
-    function TestStream() {
-        this.subscribers = [];
-    }
-    TestStream.prototype.subscribe = function (callback) {
+class TestStream {
+    subscribers = [];
+    subscribe(callback) {
         this.subscribers.push(callback);
-    };
+    }
     ;
-    TestStream.prototype.emit = function (event) {
-        for (var _i = 0, _a = this.subscribers; _i < _a.length; _i++) {
-            var subscriber = _a[_i];
+    emit(event) {
+        for (let subscriber of this.subscribers) {
             subscriber(event);
         }
-    };
+    }
     ;
-    return TestStream;
-}());
+}
 exports.TestStream = TestStream;
 ;
