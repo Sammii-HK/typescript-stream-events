@@ -134,3 +134,19 @@ async function getDetails(placeId: string) {
   }
 };
 
+import * as fs from 'fs/promises';
+
+async function createCsv() {
+  const items = await searchSampleData()
+  const header = Object.keys(items[0]) as (keyof ResultsData)[];
+  const csv = [
+    header.join(','), // header row first
+    ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], ((key, value) => value === null ? '' : value))).join(','))
+  ].join('\r\n')
+
+
+  await fs.writeFile('output.csv', csv,)
+  console.log("csv", csv)
+}
+
+createCsv()
