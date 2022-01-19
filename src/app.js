@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 require('dotenv').config();
 const axios_1 = require("axios");
-const hco_data_1 = require("./hco-data"); // CQC CSV FIELDS : [ name*, address*, postcode*, phone number, website, service types*, last updated*, services* ]   * fields are persistent 
+const hco_data_1 = require("./hco-data"); // RHCP CSV FIELDS : [ name*, address*, postcode*, phone number, website, service types*, last updated*, services* ]   * fields are persistent 
 const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 const placeSearchUrl = (searchInput) => `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
     `?fields=name%2Cplace_id%2Cformatted_address` +
@@ -21,7 +21,7 @@ const fields = [
     // 'formatted_phone_number',
 ];
 const formatFields = () => {
-    let fieldSearchQuery;
+    let fieldSearchQuery = "";
     for (let i = 0; i < fields.length; i++) {
         if (i === 0)
             fieldSearchQuery = (fields[i] + '%2C');
@@ -33,9 +33,9 @@ const formatFields = () => {
     return fieldSearchQuery;
 };
 const formattedFields = formatFields();
-async function getPlaces(searchId, searchType) {
+async function getPlaces(sample, searchType) {
     try {
-        const search = encodeURI(hcoSampleData[searchId][searchType]);
+        const search = encodeURI(sample[searchType]);
         const url = placeSearchUrl(search);
         const res = await axios_1.default.get(url);
         return res.data.candidates;
@@ -45,67 +45,68 @@ async function getPlaces(searchId, searchType) {
     }
 }
 ;
-class ResultsData {
-    cqc_id;
-    name;
-    place_match;
-    place_id;
-    place_details;
-    website_match;
-}
 ;
-let resultsOutput = [];
-let hcoSampleData = hco_data_1.sampleData;
 function matchAddress(sampleData, searchData) {
     return searchData.find(result => result.formatted_address.includes(sampleData.postcode));
 }
 ;
-function matchWebsite(sampleData, searchData) {
-    sampleData = sampleData.toLowerCase();
-    searchData = searchData.toLowerCase();
-    console.log("sampleData, searchData", sampleData, searchData);
-    const match1 = matchString(sampleData, searchData);
-    const match2 = matchString(searchData, sampleData);
-    console.log("match1, match2", match1, match2);
-    return match1 || match2;
+let urls = {};
+function matchWebsite(reference, comparison) {
+    if (comparison === undefined)
+        return false;
+    const sampleData = cleanUrl(reference);
+    let searchData = cleanUrl(comparison);
+    urls = {
+        sampleData,
+        searchData
+    };
+    return matchString(sampleData, searchData) || matchString(searchData, sampleData);
 }
 function matchString(reference, comparison) {
     return reference.includes(comparison);
 }
-async function matchSearch(sampleNumber) {
-    const searchResults = await getPlaces(sampleNumber, 'name');
-    const cqcDataRecord = hcoSampleData[sampleNumber];
-    const matchedAddress = matchAddress(cqcDataRecord, searchResults);
+;
+function cleanUrl(url) {
+    let cleanUrl = url.toLowerCase()
+        .replace('https://', '')
+        .replace('http://', '')
+        .replace('www.', '')
+        .replace('/', '');
+    return cleanUrl;
+}
+;
+async function matchSearch(sample) {
+    const searchResults = await getPlaces(sample, 'name');
+    const matchedAddress = matchAddress(sample, searchResults);
     let resultDetails, matchedWebsite;
     if (matchedAddress) {
         resultDetails = await getDetails(matchedAddress.place_id);
-        matchedWebsite = matchWebsite(cqcDataRecord.website, resultDetails.website);
+        matchedWebsite = matchWebsite(sample.website, resultDetails.website);
     }
     ;
-    let result = new ResultsData();
-    result = {
-        cqc_id: cqcDataRecord.id,
-        name: cqcDataRecord.name,
+    const result = {
+        rhcp_id: sample.id,
+        name: sample.name,
         place_id: matchedAddress?.place_id,
         place_match: !!matchedAddress?.place_id,
         place_details: !!resultDetails?.website,
         website_match: matchedWebsite,
+        urls: urls,
     };
-    resultsOutput.push(result);
-    console.log("resultsOutput", resultsOutput);
+    return result;
 }
 ;
-function searchSampleData() {
-    const index = 2;
-    matchSearch(index);
-    // sampleData.forEach((sample, index) => matchSearch(index))
+async function searchSampleData() {
+    const resultsPromises = hco_data_1.sampleData.map((sample) => matchSearch(sample));
+    const resultsOutput = await Promise.all(resultsPromises);
+    console.log("resultsOutput", resultsOutput);
+    return resultsOutput;
 }
 searchSampleData();
 async function getDetails(placeId) {
     try {
         const url = detailsSearchUrl(placeId);
         const res = await axios_1.default.get(url);
-        // console.log("DETAILS RESULTS: ", res.data.result)
         return res.data.result;
     }
     catch (error) {
@@ -113,3 +114,15 @@ async function getDetails(placeId) {
     }
 }
 ;
+const fs = require("fs/promises");
+async function createCsv() {
+    const items = await searchSampleData();
+    const header = Object.keys(items[0]);
+    const csv = [
+        header.join(','),
+        ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], ((key, value) => value === null ? '' : value))).join(','))
+    ].join('\r\n');
+    await fs.writeFile('output.csv', csv);
+    console.log("csv", csv);
+}
+createCsv();
