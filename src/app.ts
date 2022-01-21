@@ -51,7 +51,8 @@ interface ResultsData {
   place_id?: string;
   place_details?: boolean;
   website_match?: boolean;
-  urls?: object;
+  reference_website?: string | undefined;
+  results_website?: string | undefined;
 };
 
 type SampleData = typeof hcoSampleData[0];
@@ -66,16 +67,10 @@ function matchAddress(sampleData: SampleData, searchData: GooglePlaceSearchResul
   return searchData.find(result => result.formatted_address.includes(sampleData.postcode))
 };
 
-let urls = {};
-
 function matchWebsite(reference: string, comparison?: string) {
   if (comparison === undefined) return false;
   const sampleData = cleanUrl(reference);
-  let searchData = cleanUrl(comparison);
-  urls = {
-    sampleData,
-    searchData
-  }
+  const searchData = cleanUrl(comparison);
   return matchString(sampleData, searchData) || matchString(searchData, sampleData);
 }
 
@@ -97,10 +92,9 @@ async function matchSearch(sample: SampleData) {
 
   const matchedAddress = matchAddress(sample, searchResults)
   let resultDetails, matchedWebsite
-  if (matchedAddress) {
-    resultDetails = await getDetails(matchedAddress.place_id)
-    matchedWebsite = matchWebsite(sample.website, resultDetails.website)
-  };
+  if (matchedAddress) resultDetails = await getDetails(matchedAddress.place_id);
+  if (sample.website) matchedWebsite = matchWebsite(sample.website, resultDetails.website)
+  // matchedWebsite = matchWebsite(sample.website, resultDetails.website)
 
   const result: ResultsData = {
     rhcp_id: sample.id,
@@ -108,8 +102,9 @@ async function matchSearch(sample: SampleData) {
     place_id: matchedAddress?.place_id,
     place_match: !!matchedAddress?.place_id,
     place_details: !!resultDetails?.website,
+    reference_website: sample.website,
+    results_website: resultDetails?.website,
     website_match: matchedWebsite,
-    urls: urls,
   };
 
   return result;
@@ -120,6 +115,8 @@ async function searchSampleData() {
 
   const resultsOutput = await Promise.all(resultsPromises)
   console.log("resultsOutput", resultsOutput);
+
+  calculateResultPerc(resultsOutput)
   return resultsOutput
 }
 searchSampleData();
@@ -141,12 +138,39 @@ async function createCsv() {
   const header = Object.keys(items[0]) as (keyof ResultsData)[];
   const csv = [
     header.join(','), // header row first
-    ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], ((key, value) => value === null ? '' : value))).join(','))
+    ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replaceCsvValues)).join(','))
   ].join('\r\n')
 
 
   await fs.writeFile('output.csv', csv,)
-  console.log("csv", csv)
+}
+
+function replaceCsvValues(key: any, value: any) {
+  return value === null ? '' 
+    : value === true ? 1
+    : value === false ? 0
+    : value;
 }
 
 createCsv()
+
+function calculateResultPerc(resultsOutput: ResultsData[]) {
+  let placeMatchPerc = percentage(resultsOutput.filter(result => result.place_match).length, resultsOutput.length)
+  let placeDetailsPerc = percentage(resultsOutput.filter(result => result.place_details).length, resultsOutput.filter(result => result.place_match).length)
+  let websiteMatchPerc = percentage(resultsOutput.filter(result => result.website_match).length, resultsOutput.filter(result => result.reference_website).length)
+  let websiteDiscoveredPerc = percentage(resultsOutput.filter(result => result.results_website && !result.reference_website).length, resultsOutput.filter(result => !result.reference_website).length)
+
+  const resultsPerc = {
+    placeMatchPerc,
+    placeDetailsPerc,
+    websiteMatchPerc,
+    websiteDiscoveredPerc
+  } 
+
+  console.log(resultsPerc);
+}
+
+function percentage(value: number, total: number) {
+  const result = Math.floor((value / total) * 100);
+  return Math.abs(result);
+}
