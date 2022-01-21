@@ -129,4 +129,49 @@ export const sampleData = [
     postcode: 'TN2 5SE',
     website: 'http://www.dermatologyconsulting.co.uk/',
   },
-];
+  {
+    id: 2,
+    name: 'Facial Aesthetics',
+    postcode: 'CM8 3PS',
+  },
+  {
+    id: 3,
+    name: 'Amanda Azzopardi Aesthetics',
+    postcode: 'L16 1JU',
+  },
+  {
+    id: 4,
+    name: 'PHP Aesthetic',
+    postcode: 'W1G 9PL',
+  },
+  {
+    id: 5,
+    name: 'Dr Christine Medical Aesthetics',
+    postcode: 'TN4 9SG',
+  },
+  {
+    id: 6,
+    name: 'VL Aesthetics',
+    postcode: 'CA39QJ',
+  },
+  {
+    id: 7,
+    name: 'Romsey Medical Aesthetics',
+    postcode: 'SO51 8NA',
+  },
+  {
+    id: 8,
+    name: 'Rajeunir Aesthetics',
+    postcode: 'BT32 3WZ',
+  },
+  {
+    id: 9,
+    name: 'Skin Rejuvenation Clinic',
+    postcode: 'SL1 5ED',
+  },
+  // {
+  //   id: 10,
+  //   name: '',
+  //   postcode: 'BL7 9JY',
+  // }
+]
